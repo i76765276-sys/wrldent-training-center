@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Code</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    :root { --bg:#0b0f14; --card:#101826; --muted:#9fb0c3; --text:#eaf2ff; --accent:#6ea8ff; --danger:#ff6b6b; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; background:var(--bg); color:var(--text); }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 28px 16px 56px; }
+    .card { background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:18px; box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    .row > * { flex: 1 1 220px; }
+    h1 { margin:0 0 10px; font-size: 20px; letter-spacing:.2px; }
+    p { margin: 8px 0; color: var(--muted); line-height: 1.5; }
+    label { display:block; font-size: 12px; color: var(--muted); margin: 10px 0 6px; }
+    input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); color: var(--text); outline:none; }
+    input:focus { border-color: rgba(110,168,255,.65); box-shadow: 0 0 0 3px rgba(110,168,255,.18); }
+    button { padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.12); background: rgba(110,168,255,.15); color: var(--text); cursor:pointer; font-weight: 600; }
+    button:hover { background: rgba(110,168,255,.22); }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom: 14px; }
+    .pill { font-size: 12px; color: var(--muted); border:1px solid rgba(255,255,255,.12); padding: 6px 10px; border-radius: 999px; }
+    .codebox { margin-top: 12px; padding: 14px; border-radius: 12px; border: 1px dashed rgba(255,255,255,.18); background: rgba(0,0,0,.15); }
+    .codeval { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New"; font-size: 16px; color: var(--text); word-break: break-all; }
+    .actions { display:flex; gap:10px; flex-wrap: wrap; margin-top: 12px; }
+    .muted { color: var(--muted); }
+    .err { color: var(--danger); }
+    .ok { color: var(--accent); }
+    .divider { height:1px; background: rgba(255,255,255,.08); margin: 14px 0; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="topbar">
+        <h1>My Code</h1>
+        <div class="pill" id="statusPill">Checking session…</div>
+      </div>
+
+      <div id="authedView" style="display:none;">
+        <p class="muted">Signed in as <span id="userEmail"></span></p>
+
+        <div class="codebox">
+          <div class="muted" style="font-size:12px; margin-bottom:6px;">Your code</div>
+          <div class="codeval" id="codeValue">—</div>
+          <div class="muted" id="codeHint" style="font-size:12px; margin-top:8px;"></div>
+        </div>
+
+        <div class="actions">
+          <button id="refreshBtn" type="button">Refresh</button>
+          <button id="copyBtn" type="button">Copy</button>
+          <button id="logoutBtn" type="button">Log out</button>
+        </div>
+
+        <div class="divider"></div>
+        <p id="msgAuthed" class="muted"></p>
+      </div>
+
+      <div id="authView" style="display:none;">
+        <p class="muted">Sign in to load your code.</p>
+
+        <div class="row">
+          <div>
+            <label for="email">Email</label>
+            <input id="email" type="email" autocomplete="email" placeholder="you@domain.com" />
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="loginBtn" type="button">Sign in</button>
+          <button id="signupBtn" type="button">Create account</button>
+        </div>
+
+        <div class="divider"></div>
+        <p id="msgAuth" class="muted"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase JS (v2) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      // REQUIRED: set these to your project values
+      const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co";
+      const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+      // REQUIRED: set these to your table/column names
+      // Table should have a row per user, with a "user_id" column matching auth.users.id and a "code" column.
+      const TABLE_NAME = "keys";
+      const USER_ID_COL = "user_id";
+      const CODE_COL = "code";
+
+      const statusPill = document.getElementById("statusPill");
+      const authView = document.getElementById("authView");
+      const authedView = document.getElementById("authedView");
+
+      const emailEl = document.getElementById("email");
+      const passEl = document.getElementById("password");
+      const msgAuth = document.getElementById("msgAuth");
+
+      const userEmailEl = document.getElementById("userEmail");
+      const codeValueEl = document.getElementById("codeValue");
+      const codeHintEl = document.getElementById("codeHint");
+      const msgAuthed = document.getElementById("msgAuthed");
+
+      const loginBtn = document.getElementById("loginBtn");
+      const signupBtn = document.getElementById("signupBtn");
+      const refreshBtn = document.getElementById("refreshBtn");
+      const copyBtn = document.getElementById("copyBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      function setPill(text) { statusPill.textContent = text; }
+      function setAuthMsg(text, kind) {
+        msgAuth.textContent = text || "";
+        msgAuth.className = kind === "err" ? "err" : kind === "ok" ? "ok" : "muted";
+      }
+      function setAuthedMsg(text, kind) {
+        msgAuthed.textContent = text || "";
+        msgAuthed.className = kind === "err" ? "err" : kind === "ok" ? "ok" : "muted";
+      }
+      function setButtonsLoading(loading) {
+        [loginBtn, signupBtn, refreshBtn, copyBtn, logoutBtn].forEach(b => { if (b) b.disabled = !!loading; });
+      }
+
+      if (!SUPABASE_URL.includes("supabase.co") || SUPABASE_ANON_KEY === "YOUR_SUPABASE_ANON_KEY") {
+        setPill("Config required");
+        authView.style.display = "block";
+        setAuthMsg("Set SUPABASE_URL and SUPABASE_ANON_KEY in the HTML before using this page.", "err");
+        return;
+      }
+
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+
+      async function showSignedOut() {
+        setPill("Signed out");
+        authedView.style.display = "none";
+        authView.style.display = "block";
+        codeValueEl.textContent = "—";
+        codeHintEl.textContent = "";
+        userEmailEl.textContent = "";
+        setAuthedMsg("");
+      }
+
+      async function showSignedIn(user) {
+        setPill("Signed in");
+        authView.style.display = "none";
+        authedView.style.display = "block";
+        userEmailEl.textContent = user.email || user.id;
+        await loadUserCode(user.id);
+      }
+
+      async function loadUserCode(userId) {
+        setButtonsLoading(true);
+        setAuthedMsg("Loading your code…");
+        codeValueEl.textContent = "—";
+        codeHintEl.textContent = "";
+
+        try {
+          const { data, error } = await supabase
+            .from(TABLE_NAME)
+            .select(`${CODE_COL}`)
+            .eq(USER_ID_COL, userId)
+            .maybeSingle();
+
+          if (error) throw error;
+
+          const code = data && data[CODE_COL] ? String(data[CODE_COL]) : "";
+          if (!code) {
+            setAuthedMsg("No code found for this account.", "err");
+            codeValueEl.textContent = "—";
+            codeHintEl.textContent = `Expected a row in "${TABLE_NAME}" where ${USER_ID_COL} = your user id.`;
+            return;
+          }
+
+          codeValueEl.textContent = code;
+          setAuthedMsg("Loaded.", "ok");
+        } catch (e) {
+          setAuthedMsg((e && e.message) ? e.message : "Failed to load code.", "err");
+        } finally {
+          setButtonsLoading(false);
+        }
+      }
+
+      async function signInWithEmailPassword() {
+        setButtonsLoading(true);
+        setAuthMsg("");
+
+        const email = (emailEl.value || "").trim();
+        const password = passEl.value || "";
+
+        if (!email || !password) {
+          setAuthMsg("Email and password are required.", "err");
+          setButtonsLoading(false);
+          return;
+        }
+
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          setAuthMsg("", "ok");
+          await showSignedIn(data.user);
+        } catch (e) {
+          setAuthMsg((e && e.message) ? e.message : "Sign in failed.", "err");
+        } finally {
+          setButtonsLoading(false);
+        }
+      }
+
+      async function signUpWithEmailPassword() {
+        setButtonsLoading(true);
+        setAuthMsg("");
+
+        const email = (emailEl.value || "").trim();
+        const password = passEl.value || "";
+
+        if (!email || !password) {
+          setAuthMsg("Email and password are required.", "err");
+          setButtonsLoading(false);
+          return;
+        }
+
+        try {
+          const { data, error } = await supabase.auth.signUp({ email, password });
+          if (error) throw error;
+
+          // If email confirmations are enabled, session may be null here.
+          if (data.session && data.user) {
+            setAuthMsg("", "ok");
+            await showSignedIn(data.user);
+          } else {
+            setAuthMsg("Account created. Check your email to confirm, then sign in.", "ok");
+          }
+        } catch (e) {
+          setAuthMsg((e && e.message) ? e.message : "Sign up failed.", "err");
+        } finally {
+          setButtonsLoading(false);
+        }
+      }
+
+      async function copyCode() {
+        const code = (codeValueEl.textContent || "").trim();
+        if (!code || code === "—") {
+          setAuthedMsg("Nothing to copy.", "err");
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(code);
+          setAuthedMsg("Copied to clipboard.", "ok");
+        } catch {
+          setAuthedMsg("Clipboard copy blocked by your browser.", "err");
+        }
+      }
+
+      async function logout() {
+        setButtonsLoading(true);
+        try {
+          const { error } = await supabase.auth.signOut();
+          if (error) throw error;
+          await showSignedOut();
+        } catch (e) {
+          setAuthedMsg((e && e.message) ? e.message : "Logout failed.", "err");
+        } finally {
+          setButtonsLoading(false);
+        }
+      }
+
+      loginBtn.addEventListener("click", signInWithEmailPassword);
+      signupBtn.addEventListener("click", signUpWithEmailPassword);
+      refreshBtn.addEventListener("click", async () => {
+        const { data } = await supabase.auth.getUser();
+        if (data && data.user) await loadUserCode(data.user.id);
+      });
+      copyBtn.addEventListener("click", copyCode);
+      logoutBtn.addEventListener("click", logout);
+
+      (async function init() {
+        try {
+          setPill("Checking session…");
+          const { data } = await supabase.auth.getSession();
+          const session = data ? data.session : null;
+          if (session && session.user) await showSignedIn(session.user);
+          else await showSignedOut();
+
+          supabase.auth.onAuthStateChange(async (_event, sessionNow) => {
+            if (sessionNow && sessionNow.user) await showSignedIn(sessionNow.user);
+            else await showSignedOut();
+          });
+        } catch (e) {
+          setPill("Error");
+          authView.style.display = "block";
+          setAuthMsg((e && e.message) ? e.message : "Initialization failed.", "err");
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
