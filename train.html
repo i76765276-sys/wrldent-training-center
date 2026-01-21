@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Staff Portal</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    :root{
+      --bg:#0b0f17; --card:#0f1626; --card2:#0c1220; --text:#e8eefc; --muted:#9fb0d0;
+      --line:rgba(255,255,255,.08); --accent:#6ea8ff; --good:#31d0aa; --bad:#ff5b6e; --warn:#ffce5b;
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+      background:
+        radial-gradient(1200px 600px at 20% 20%, rgba(110,168,255,.18), transparent 55%),
+        radial-gradient(900px 500px at 85% 35%, rgba(49,208,170,.16), transparent 55%),
+        radial-gradient(700px 450px at 35% 85%, rgba(255,91,110,.10), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      padding:24px;
+    }
+    .wrap{width:min(980px,100%); display:grid; gap:16px; grid-template-columns: 1.1fr .9fr}
+    @media (max-width: 940px){ .wrap{grid-template-columns:1fr} }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .head{
+      padding:18px 18px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background: rgba(255,255,255,.02);
+    }
+    .brand{display:flex; align-items:center; gap:10px}
+    .dot{
+      width:10px; height:10px; border-radius:999px; background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(110,168,255,.15);
+    }
+    h1{font-size:16px; margin:0; letter-spacing:.2px}
+    .sub{font-size:12px; color:var(--muted); margin:2px 0 0}
+    .pill{
+      font-size:12px; color:var(--muted);
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      padding:8px 10px; border-radius:999px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .pill b{color:var(--text); font-weight:700}
+    .body{padding:18px}
+    .grid{display:grid; gap:12px}
+    .row{display:grid; gap:12px; grid-template-columns: 1fr 1fr}
+    @media (max-width: 560px){ .row{grid-template-columns:1fr} }
+    label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px}
+    input, textarea, select{
+      width:100%;
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.10);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 12px;
+      outline:none;
+      transition: border-color .15s, box-shadow .15s, transform .05s;
+    }
+    textarea{min-height:110px; resize:vertical}
+    input:focus, textarea:focus, select:focus{
+      border-color: rgba(110,168,255,.55);
+      box-shadow: 0 0 0 4px rgba(110,168,255,.12);
+    }
+    .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:6px}
+    button{
+      border:0;
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: #08101e;
+      background: var(--accent);
+      font-weight: 800;
+      letter-spacing:.2px;
+      cursor:pointer;
+      transition: transform .05s ease, filter .15s ease;
+    }
+    button:disabled{opacity:.55; cursor:not-allowed}
+    button:active{transform: translateY(1px)}
+    .ghost{
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .note{
+      border:1px dashed rgba(255,255,255,.14);
+      background: rgba(255,255,255,.02);
+      border-radius: 16px;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height:1.4;
+    }
+    .status{
+      display:flex; gap:10px; align-items:flex-start;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+    }
+    .icon{
+      width:10px; height:10px; border-radius:999px; margin-top:4px;
+      background: var(--muted);
+      box-shadow: 0 0 0 4px rgba(159,176,208,.12);
+      flex: 0 0 auto;
+    }
+    .status.good .icon{background: var(--good); box-shadow:0 0 0 4px rgba(49,208,170,.14)}
+    .status.bad .icon{background: var(--bad); box-shadow:0 0 0 4px rgba(255,91,110,.14)}
+    .status.warn .icon{background: var(--warn); box-shadow:0 0 0 4px rgba(255,206,91,.14)}
+    .status .txt{font-size:12px; color:var(--muted); line-height:1.35}
+    .status .txt b{color:var(--text)}
+    .hidden{display:none !important}
+    .tiny{font-size:11px; color:var(--muted)}
+    .sep{height:1px; background: var(--line); margin:10px 0}
+    a{color:var(--accent); text-decoration:none}
+    a:hover{text-decoration:underline}
+    .right .body{padding:0}
+    .side{
+      padding:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border-bottom:1px solid var(--line);
+    }
+    .side h2{margin:0 0 6px; font-size:14px}
+    .side p{margin:0; color:var(--muted); font-size:12px; line-height:1.45}
+    .side .list{margin-top:12px; display:grid; gap:10px}
+    .li{
+      padding:12px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      background: rgba(0,0,0,.18);
+      font-size:12px; color:var(--muted); line-height:1.35;
+    }
+    .li b{color:var(--text)}
+    .footer{
+      padding:14px 18px;
+      font-size:11px;
+      color:var(--muted);
+      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card left" aria-label="Portal">
+      <div class="head">
+        <div class="brand">
+          <span class="dot" aria-hidden="true"></span>
+          <div>
+            <h1>Staff Portal</h1>
+            <div class="sub">Discord Moderation, Support, and Management</div>
+          </div>
+        </div>
+        <div class="pill" title="Connection state">
+          <span id="connDot" class="dot" style="width:8px;height:8px;box-shadow:none;background:rgba(159,176,208,.7)"></span>
+          <span>Database: <b id="connText">Not configured</b></span>
+        </div>
+      </div>
+
+      <div class="body">
+        <div id="statusBox" class="status warn">
+          <div class="icon" aria-hidden="true"></div>
+          <div class="txt">
+            <b id="statusTitle">Enter your Discord details to continue.</b><br />
+            <span id="statusMsg">We will check whether you already exist in our system.</span>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <form id="lookupForm" class="grid" autocomplete="on" novalidate>
+          <div class="row">
+            <div>
+              <label for="discordId">Discord User ID</label>
+              <input id="discordId" name="discordId" inputmode="numeric" placeholder="e.g., 123456789012345678" minlength="10" maxlength="22" required />
+              <div class="tiny">Tip: Enable Developer Mode in Discord to copy your User ID.</div>
+            </div>
+            <div>
+              <label for="discordTag">Discord Username</label>
+              <input id="discordTag" name="discordTag" placeholder="e.g., username or username#0000" maxlength="64" />
+              <div class="tiny">Optional, used for reference only.</div>
+            </div>
+          </div>
+
+          <div class="btns">
+            <button id="btnCheck" type="submit">Check</button>
+            <button id="btnClear" type="button" class="ghost">Clear</button>
+          </div>
+
+          <div class="note">
+            If you already exist, you will be taken to the next step immediately. If you do not exist, the application will open automatically.
+          </div>
+        </form>
+
+        <div id="existingView" class="hidden">
+          <div class="sep"></div>
+          <div class="grid">
+            <div class="status good">
+              <div class="icon" aria-hidden="true"></div>
+              <div class="txt">
+                <b>Verified.</b><br />
+                <span id="existingMeta">You are recognized in the system.</span>
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Role Track</label>
+                <input id="existingTrack" readonly />
+              </div>
+              <div>
+                <label>Status</label>
+                <input id="existingStatus" readonly />
+              </div>
+            </div>
+
+            <div class="btns">
+              <button id="btnContinue" type="button">Continue</button>
+              <button id="btnRecheck" type="button" class="ghost">Check again</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="appView" class="hidden">
+          <div class="sep"></div>
+          <form id="appForm" class="grid" autocomplete="on" novalidate>
+            <div class="status">
+              <div class="icon" aria-hidden="true"></div>
+              <div class="txt">
+                <b>Application</b><br />
+                <span>Complete the form below for Discord Moderation, Support, or Management.</span>
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="track">Position Track</label>
+                <select id="track" required>
+                  <option value="" selected disabled>Select one</option>
+                  <option value="moderation">Moderation</option>
+                  <option value="support">Support</option>
+                  <option value="management">Management</option>
+                </select>
+              </div>
+              <div>
+                <label for="timezone">Timezone</label>
+                <input id="timezone" placeholder="e.g., America/New_York" maxlength="64" required />
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="ageConfirm">Age Confirmation</label>
+                <select id="ageConfirm" required>
+                  <option value="" selected disabled>Select one</option>
+                  <option value="18_plus">I am 18 or older</option>
+                  <option value="under_18">I am under 18</option>
+                </select>
+              </div>
+              <div>
+                <label for="availability">Weekly Availability</label>
+                <input id="availability" placeholder="e.g., 10–15 hours/week, evenings" maxlength="120" required />
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label for="experienceYears">Experience (years)</label>
+                <input id="experienceYears" inputmode="decimal" placeholder="e.g., 2" maxlength="8" required />
+              </div>
+              <div>
+                <label for="serverCount">Servers previously staffed</label>
+                <input id="serverCount" inputmode="numeric" placeholder="e.g., 3" maxlength="8" required />
+              </div>
+            </div>
+
+            <div>
+              <label for="why">Why do you want this role?</label>
+              <textarea id="why" placeholder="Be specific about your motivation and fit." required></textarea>
+            </div>
+
+            <div>
+              <label for="scenario">Scenario response</label>
+              <textarea id="scenario" placeholder="Describe how you would handle a difficult user conflict or a rule violation." required></textarea>
+            </div>
+
+            <div>
+              <label for="tools">Tools & skills</label>
+              <textarea id="tools" placeholder="Examples: ticketing systems, escalation, automod, logs, policy writing, training." required></textarea>
+            </div>
+
+            <div class="btns">
+              <button id="btnSubmitApp" type="submit">Submit application</button>
+              <button id="btnCancelApp" type="button" class="ghost">Cancel</button>
+            </div>
+
+            <div class="tiny">
+              By submitting, you confirm all information is accurate. Submissions may be reviewed manually.
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div>Keyboard: <span class="kbd">Enter</span> to submit</div>
+        <div id="footHint">Client-side validation enabled</div>
+      </div>
+    </section>
+
+    <aside class="card right" aria-label="Info">
+      <div class="head">
+        <div class="brand">
+          <span class="dot" aria-hidden="true" style="background: var(--good); box-shadow:0 0 0 4px rgba(49,208,170,.14)"></span>
+          <div>
+            <h1>What happens next</h1>
+            <div class="sub">Fast verification, then role flow</div>
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="side">
+          <h2>Verification</h2>
+          <p>If your Discord ID is already on file, you will be recognized and can continue immediately. If not, the application will open.</p>
+          <div class="list">
+            <div class="li"><b>Moderation</b><br/>Policy enforcement, incident handling, and community safety.</div>
+            <div class="li"><b>Support</b><br/>User help, tickets, troubleshooting, and escalation discipline.</div>
+            <div class="li"><b>Management</b><br/>Operations, staffing, training, documentation, and performance standards.</div>
+          </div>
+        </div>
+        <div class="side" style="border-bottom:0">
+          <h2>Configuration</h2>
+          <p>This page is already configured with your project URL and key.</p>
+          <div class="sep"></div>
+          <div class="tiny">
+            Tables expected by default:
+            <span class="kbd">members</span> (lookup) and <span class="kbd">applications</span> (insert).
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    'use strict';
+
+    const CONFIG = Object.freeze({
+      DB_URL: "https://msujhrjkdhxtnvuyvhtr.supabase.co",
+      DB_ANON_KEY: "sb_publishable_Gn8vsw10rC7ndlj92wM63Q_SStHHtRp",
+
+      TABLES: Object.freeze({
+        MEMBERS: "members",
+        APPLICATIONS: "applications"
+      }),
+
+      COLUMNS: Object.freeze({
+        MEMBER_DISCORD_ID: "discord_id",
+        MEMBER_STATUS: "status",
+        MEMBER_TRACK: "track",
+        MEMBER_DISPLAY: "display_name",
+
+        APP_DISCORD_ID: "discord_id",
+        APP_DISCORD_TAG: "discord_tag",
+        APP_TRACK: "track",
+        APP_TIMEZONE: "timezone",
+        APP_AGE_CONFIRM: "age_confirm",
+        APP_AVAILABILITY: "availability",
+        APP_EXPERIENCE_YEARS: "experience_years",
+        APP_SERVER_COUNT: "server_count",
+        APP_WHY: "why",
+        APP_SCENARIO: "scenario",
+        APP_TOOLS: "tools",
+        APP_STATUS: "status"
+      }),
+
+      BLOCKED_STATUSES: Object.freeze(["banned", "blocked"])
+    });
+
+    const el = (id) => document.getElementById(id);
+
+    const connDot = el("connDot");
+    const connText = el("connText");
+
+    const statusBox = el("statusBox");
+    const statusTitle = el("statusTitle");
+    const statusMsg = el("statusMsg");
+
+    const lookupForm = el("lookupForm");
+    const discordId = el("discordId");
+    const discordTag = el("discordTag");
+    const btnCheck = el("btnCheck");
+    const btnClear = el("btnClear");
+
+    const existingView = el("existingView");
+    const existingTrack = el("existingTrack");
+    const existingStatus = el("existingStatus");
+    const existingMeta = el("existingMeta");
+    const btnContinue = el("btnContinue");
+    const btnRecheck = el("btnRecheck");
+
+    const appView = el("appView");
+    const appForm = el("appForm");
+    const track = el("track");
+    const timezone = el("timezone");
+    const ageConfirm = el("ageConfirm");
+    const availability = el("availability");
+    const experienceYears = el("experienceYears");
+    const serverCount = el("serverCount");
+    const why = el("why");
+    const scenario = el("scenario");
+    const tools = el("tools");
+    const btnSubmitApp = el("btnSubmitApp");
+    const btnCancelApp = el("btnCancelApp");
+
+    const footHint = el("footHint");
+
+    function setStatus(kind, title, message) {
+      statusBox.classList.remove("good", "bad", "warn");
+      statusBox.classList.add(kind);
+      statusTitle.textContent = title;
+      statusMsg.textContent = message;
+    }
+
+    function showExisting(member) {
+      existingView.classList.remove("hidden");
+      appView.classList.add("hidden");
+
+      existingTrack.value = (member?.[CONFIG.COLUMNS.MEMBER_TRACK] || "—").toString();
+      existingStatus.value = (member?.[CONFIG.COLUMNS.MEMBER_STATUS] || "—").toString();
+
+      const disp = member?.[CONFIG.COLUMNS.MEMBER_DISPLAY];
+      const did = member?.[CONFIG.COLUMNS.MEMBER_DISCORD_ID];
+      existingMeta.textContent = (disp ? `${disp} • ` : "") + `Discord ID: ${did || "—"}`;
+    }
+
+    function showApplication(prefill = {}) {
+      existingView.classList.add("hidden");
+      appView.classList.remove("hidden");
+
+      if (!timezone.value) {
+        try { timezone.value = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (_) {}
+      }
+      if (prefill.track) track.value = prefill.track;
+      if (prefill.timezone) timezone.value = prefill.timezone;
+    }
+
+    function resetViews() {
+      existingView.classList.add("hidden");
+      appView.classList.add("hidden");
+    }
+
+    function setLoading(isLoading) {
+      btnCheck.disabled = isLoading;
+      btnClear.disabled = isLoading;
+      btnContinue.disabled = isLoading;
+      btnRecheck.disabled = isLoading;
+      btnSubmitApp.disabled = isLoading;
+      btnCancelApp.disabled = isLoading;
+      footHint.textContent = isLoading ? "Working…" : "Client-side validation enabled";
+    }
+
+    function isConfigured() {
+      return (
+        typeof CONFIG.DB_URL === "string" &&
+        typeof CONFIG.DB_ANON_KEY === "string" &&
+        CONFIG.DB_URL.startsWith("http") &&
+        CONFIG.DB_ANON_KEY.length > 20
+      );
+    }
+
+    function normalizeDiscordId(v) {
+      return String(v || "").trim().replace(/[^\d]/g, "");
+    }
+
+    function sanitizeText(v, maxLen) {
+      const s = String(v || "").trim();
+      return s.length > maxLen ? s.slice(0, maxLen) : s;
+    }
+
+    let db = null;
+
+    function initDb() {
+      if (!isConfigured()) {
+        connText.textContent = "Not configured";
+        connDot.style.background = "rgba(159,176,208,.7)";
+        return null;
+      }
+      try {
+        db = window.supabase.createClient(CONFIG.DB_URL, CONFIG.DB_ANON_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+        connText.textContent = "Ready";
+        connDot.style.background = "rgba(49,208,170,.95)";
+        return db;
+      } catch (e) {
+        connText.textContent = "Error";
+        connDot.style.background = "rgba(255,91,110,.95)";
+        return null;
+      }
+    }
+
+    async function lookupMemberByDiscordId(did) {
+      if (!db) throw new Error("Database not initialized.");
+      const col = CONFIG.COLUMNS.MEMBER_DISCORD_ID;
+
+      const { data, error } = await db
+        .from(CONFIG.TABLES.MEMBERS)
+        .select([
+          CONFIG.COLUMNS.MEMBER_DISCORD_ID,
+          CONFIG.COLUMNS.MEMBER_STATUS,
+          CONFIG.COLUMNS.MEMBER_TRACK,
+          CONFIG.COLUMNS.MEMBER_DISPLAY
+        ].join(","))
+        .eq(col, did)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data || null;
+    }
+
+    async function submitApplication(payload) {
+      if (!db) throw new Error("Database not initialized.");
+
+      const { data, error } = await db
+        .from(CONFIG.TABLES.APPLICATIONS)
+        .insert(payload)
+        .select("*")
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+
+    btnClear.addEventListener("click", () => {
+      lookupForm.reset();
+      appForm.reset();
+      resetViews();
+      setStatus("warn", "Enter your Discord details to continue.", "We will check whether you already exist in our system.");
+    });
+
+    btnRecheck.addEventListener("click", () => {
+      resetViews();
+      setStatus("warn", "Re-check ready.", "Submit your Discord ID again to verify.");
+      discordId.focus();
+    });
+
+    btnContinue.addEventListener("click", () => {
+      setStatus("good", "Access granted.", "Proceed to the next step in your workflow.");
+      // window.location.href = "/dashboard.html";
+    });
+
+    btnCancelApp.addEventListener("click", () => {
+      resetViews();
+      setStatus("warn", "Application canceled.", "You can run the check again at any time.");
+    });
+
+    lookupForm.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      resetViews();
+
+      const did = normalizeDiscordId(discordId.value);
+      const tag = sanitizeText(discordTag.value, 64);
+
+      if (!did || did.length < 10) {
+        setStatus("bad", "Invalid Discord ID.", "Enter a valid numeric Discord User ID.");
+        discordId.focus();
+        return;
+      }
+
+      if (!db) {
+        setStatus("bad", "Not configured.", "Database configuration is missing or invalid.");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setStatus("warn", "Checking…", "Verifying your Discord ID in the system.");
+
+        const member = await lookupMemberByDiscordId(did);
+
+        if (member) {
+          const st = String(member[CONFIG.COLUMNS.MEMBER_STATUS] || "").toLowerCase();
+          const isBlocked = CONFIG.BLOCKED_STATUSES.includes(st);
+
+          if (isBlocked) {
+            setStatus("bad", "Access restricted.", "Your account is not eligible to proceed. Contact an administrator if you believe this is incorrect.");
+            showExisting(member);
+            return;
+          }
+
+          setStatus("good", "Account found.", "You are recognized in the system.");
+          showExisting(member);
+          return;
+        }
+
+        setStatus("warn", "No account found.", "Opening the application.");
+        showApplication();
+
+        // Carry forward Discord details into the application submission payload
+        // (kept in memory; not displayed unless you want to add UI fields)
+        appForm.dataset.discordId = did;
+        appForm.dataset.discordTag = tag;
+
+      } catch (err) {
+        const msg = (err && (err.message || err.error_description)) ? String(err.message || err.error_description) : "Unknown error.";
+        setStatus("bad", "Check failed.", msg);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    appForm.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+
+      const did = normalizeDiscordId(appForm.dataset.discordId || discordId.value);
+      const tag = sanitizeText(appForm.dataset.discordTag || discordTag.value, 64);
+
+      if (!did || did.length < 10) {
+        setStatus("bad", "Missing Discord ID.", "Return to the check step and enter a valid Discord User ID.");
+        resetViews();
+        return;
+      }
+
+      const payload = {};
+      payload[CONFIG.COLUMNS.APP_DISCORD_ID] = did;
+      payload[CONFIG.COLUMNS.APP_DISCORD_TAG] = tag;
+      payload[CONFIG.COLUMNS.APP_TRACK] = String(track.value || "").trim();
+      payload[CONFIG.COLUMNS.APP_TIMEZONE] = sanitizeText(timezone.value, 64);
+      payload[CONFIG.COLUMNS.APP_AGE_CONFIRM] = String(ageConfirm.value || "").trim();
+      payload[CONFIG.COLUMNS.APP_AVAILABILITY] = sanitizeText(availability.value, 120);
+
+      const exp = String(experienceYears.value || "").trim();
+      const srv = String(serverCount.value || "").trim();
+      payload[CONFIG.COLUMNS.APP_EXPERIENCE_YEARS] = exp;
+      payload[CONFIG.COLUMNS.APP_SERVER_COUNT] = srv;
+
+      payload[CONFIG.COLUMNS.APP_WHY] = sanitizeText(why.value, 4000);
+      payload[CONFIG.COLUMNS.APP_SCENARIO] = sanitizeText(scenario.value, 4000);
+      payload[CONFIG.COLUMNS.APP_TOOLS] = sanitizeText(tools.value, 4000);
+      payload[CONFIG.COLUMNS.APP_STATUS] = "submitted";
+
+      // Basic client checks before insert
+      if (!payload[CONFIG.COLUMNS.APP_TRACK]) { setStatus("bad","Missing track.","Select a position track."); track.focus(); return; }
+      if (!payload[CONFIG.COLUMNS.APP_TIMEZONE]) { setStatus("bad","Missing timezone.","Enter your timezone."); timezone.focus(); return; }
+      if (!payload[CONFIG.COLUMNS.APP_AGE_CONFIRM]) { setStatus("bad","Missing age confirmation.","Select one option."); ageConfirm.focus(); return; }
+      if (!payload[CONFIG.COLUMNS.APP_AVAILABILITY]) { setStatus("bad","Missing availability.","Enter your weekly availability."); availability.focus(); return; }
+      if (!payload[CONFIG.COLUMNS.APP_WHY]) { setStatus("bad","Missing response.","Complete the motivation section."); why.focus(); return; }
+      if (!payload[CONFIG.COLUMNS.APP_SCENARIO]) { setStatus("bad","Missing response.","Complete the scenario section."); scenario.focus(); return; }
+      if (!payload[CONFIG.COLUMNS.APP_TOOLS]) { setStatus("bad","Missing response.","List your tools & skills."); tools.focus(); return; }
+
+      try {
+        setLoading(true);
+        setStatus("warn", "Submitting…", "Your application is being submitted.");
+
+        const created = await submitApplication(payload);
+
+        setStatus("good", "Application submitted.", "Your application has been recorded successfully.");
+        appForm.reset();
+
+        // Optional: show a basic reference ID if your table includes an "id" column
+        // if (created && created.id) setStatus("good","Application submitted.",`Recorded. Reference: ${created.id}`);
+
+      } catch (err) {
+        const msg = (err && (err.message || err.error_description)) ? String(err.message || err.error_description) : "Unknown error.";
+        setStatus("bad", "Submission failed.", msg);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // init
+    initDb();
+  </script>
+</body>
+</html>
